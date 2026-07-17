@@ -1,5 +1,6 @@
 package ru.vadim.messengercore.configuration;
 
+import org.redisson.api.RedissonReactiveClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,4 +20,5 @@ public class RedissonConfiguration {
     public HandlerMapping handlerMapping() {
         return new SimpleUrlHandlerMapping(Map.of("/chat", chatRoomService), -1);
     }
+
 }
