@@ -1,12 +1,11 @@
 package ru.vadim.messengercore.entity;
 
-import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-@Table("app_user")
-public record User(
-        @Id Long id,
-        @Column("user_id") Long userId
+@Table("user_room")
+public record UserRoom(
+        @Column("user_id") Long userId,
+        @Column("room_id") Long roomId
 ) {
 }

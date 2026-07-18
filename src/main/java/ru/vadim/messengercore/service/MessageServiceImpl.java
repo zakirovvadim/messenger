@@ -25,6 +25,8 @@ import java.net.URI;
 public class MessageServiceImpl implements WebSocketHandler {
 
     private final RedissonReactiveClient client;
+    private final MessageReceiverServiceImpl receiverService;
+    private final MessageSenderServiceImpl senderService;
 
     @Override
     public Mono<Void> handle(WebSocketSession webSocketSession) {
@@ -34,24 +36,11 @@ public class MessageServiceImpl implements WebSocketHandler {
         RListReactive<String> list = this.client.getList("chat:history:" + room, StringCodec.INSTANCE);
 
         // subscribe
-        Mono<Void> receiveMessage = webSocketSession.receive()
-                .map(WebSocketMessage::getPayloadAsText)
-                .doOnNext(message -> log.info("Send message: {}", message))
-                .concatMap(message -> list.add(message).then(topic.publish(message)))
-                .doOnError(message -> log.error("Error int subscriber{}", String.valueOf(message)))
-                .doFinally(s -> System.out.println("Subscriber finally " + s))
-                .then();
-
+        Mono<Void> receiveMessage = receiverService.receiveMessage(webSocketSession, topic, list);
         // publisher
-        Flux<WebSocketMessage> outgoingMessages = topic.getMessages(String.class)
-                .startWith(list.iterator())
-                .map(webSocketSession::textMessage)
-                .doOnNext(message -> log.info("Get message: {}", message.getPayloadAsText()))
-                .doOnError(message -> log.error("Error in publisher {}", String.valueOf(message)))
-                .doFinally(s -> log.info("publisher finally {}", s));
+        Flux<WebSocketMessage> outgoingMessages = senderService.sendMessage(webSocketSession, topic, list);
 
         Mono<Void> sendMessages = webSocketSession.send(outgoingMessages);
-
         return Mono.when(receiveMessage, sendMessages)
                 .doFinally(signal -> log.info("WebSocket session finished: room={}, session={}, signal={}", room, webSocketSession.getId(), signal));
     }
